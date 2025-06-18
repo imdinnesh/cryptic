@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Copy, Lock, Unlock, Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { encryptResponse, decryptRequest } from "@/lib/crypto";
+import { toast } from "sonner";
 
 // Mock functions for demonstration
 // const encryptResponse = (text: string, key: string) => `{"ResponseData":"${btoa(text)}:${btoa(key)}"}`;
@@ -34,6 +35,12 @@ export default function CryptoTool() {
     const [isError, setIsError] = useState(false);
     const [copied, setCopied] = useState(false);
 
+    useEffect(() => {
+        setInputText("");
+        setResult("");
+        setIsError(false);
+    }, [mode]);
+
     const handleAction = () => {
         if (!inputText || !key) {
             setResult("❌ Error: Input and key cannot be empty.");
@@ -46,23 +53,20 @@ export default function CryptoTool() {
 
         try {
             if (mode === "encrypt") {
-                // Encryption produces a standard ResponseData payload
                 const encrypted = encryptResponse(inputText, key);
-                const responsePayload = { ResponseData: encrypted };
+                // CHANGE: Simplified the output structure for encryption
+                const responsePayload = { RequestData: encrypted };
                 setResult(JSON.stringify(responsePayload, null, 2));
             } else {
-                // Decryption can handle either ResponseData or RequestData
                 let encryptedPayload: string;
                 try {
                     const parsedInput = JSON.parse(inputText);
-                    
-                    // --- MODIFICATION: Check for either key ---
                     const data = parsedInput.ResponseData || parsedInput.RequestData;
 
                     if (typeof data === 'string' && data.trim() !== '') {
                         encryptedPayload = data;
                     } else {
-                        throw new Error("Input JSON must contain a non-empty string value for 'ResponseData' or 'RequestData'.");
+                        throw new Error("Input JSON must contain a non-empty string for 'ResponseData' or 'RequestData'.");
                     }
                 } catch (e: any) {
                     setResult(`❌ Error: Invalid input format. ${e.message}`);
@@ -72,12 +76,11 @@ export default function CryptoTool() {
 
                 const decrypted = decryptRequest(encryptedPayload, key);
 
-                // Attempt to pretty-print the final decrypted result if it's JSON
                 try {
                     const jsonObject = JSON.parse(decrypted);
                     setResult(JSON.stringify(jsonObject, null, 2));
                 } catch (jsonError) {
-                    setResult(decrypted); // Show as plain text if not JSON
+                    setResult(decrypted);
                 }
             }
         } catch (err: any) {
@@ -91,7 +94,27 @@ export default function CryptoTool() {
         if (result && !isError) {
             navigator.clipboard.writeText(result);
             setCopied(true);
+            toast.success("Result copied to clipboard!")
             setTimeout(() => setCopied(false), 2000);
+        }
+    };
+
+    const generateInputDescription = () => {
+        const baseDescription = mode === "encrypt"
+            ? "Enter the raw text or JSON to encrypt."
+            : "Paste the JSON with 'ResponseData' or 'RequestData'.";
+
+        if (!inputText) return baseDescription;
+
+        try {
+            const parsed = JSON.parse(inputText);
+            const key = parsed.ResponseData ? 'ResponseData' : 'RequestData';
+            if (parsed[key]) {
+                return `Valid JSON detected. ${key} length: ${parsed[key].length}`;
+            }
+            return "Valid JSON detected, but required key is missing.";
+        } catch {
+            return `Plain text input detected. Length: ${inputText.length}`;
         }
     };
 
@@ -118,26 +141,27 @@ export default function CryptoTool() {
                     </TabsList>
                 </Tabs>
 
-                <ControlPanelContent onAction={handleAction} keyState={[key, setKey]} mode={mode} />
+                {/* CHANGE: Simplified props for ControlPanelContent for better readability */}
+                <ControlPanelContent onAction={handleAction} keyVal={key} onKeyChange={setKey} mode={mode} />
 
                 <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                     <Card>
                         <CardHeader>
                             <CardTitle>Input</CardTitle>
+                            {/* CHANGE: Using the new dynamic description function */}
                             <CardDescription>
-                                {mode === "encrypt"
-                                    ? "Enter the raw text or JSON you want to encrypt."
-                                    : "Paste the JSON object containing 'ResponseData' or 'RequestData'."}
+                                {generateInputDescription()}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Textarea
                                 spellCheck="false"
                                 placeholder={
-                                    mode === "encrypt"
+                                    mode === 'encrypt'
                                         ? 'Your secret message or {"data": "value"}'
                                         : '{\n  "ResponseData": "PzuBqQ1h/v/b8enC..."\n}'
                                 }
+                                // CHANGE: The value is now directly tied to the state. This is crucial.
                                 value={inputText}
                                 onChange={(e) => setInputText(e.target.value)}
                                 className="min-h-[250px] font-mono"
@@ -146,29 +170,33 @@ export default function CryptoTool() {
                     </Card>
 
                     <Card>
+                        {/* CHANGE: The CardHeader is now a flex container to position the copy button correctly. */}
                         <CardHeader>
-                            <CardTitle>Result</CardTitle>
-                            <CardDescription>
-                                {mode === "encrypt"
-                                    ? "The resulting JSON with encrypted data."
-                                    : "The decrypted, formatted result."}
-                            </CardDescription>
+                            <div className="flex items-center justify-between">
+                                <div className="space-y-1">
+                                    <CardTitle>Result</CardTitle>
+                                    <CardDescription>
+                                        {mode === "encrypt"
+                                            ? "The resulting JSON with encrypted data."
+                                            : "The decrypted, formatted result."}
+                                    </CardDescription>
+                                </div>
+                                {result && !isError && (
+                                    <Button variant="ghost" size="icon" onClick={handleCopy}>
+                                        {copied ? <Check className="h-5 w-5 text-green-500" /> : <Copy className="h-5 w-5" />}
+                                        <span className="sr-only">Copy to Clipboard</span>
+                                    </Button>
+                                )}
+                            </div>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent>
                             <Textarea
                                 placeholder="The result will appear here..."
                                 value={result}
                                 readOnly
-                                className={`min-h-[250px] font-mono ${
-                                  isError ? "text-red-500" : "text-muted-foreground"
-                                }`}
+                                className={`min-h-[250px] font-mono ${isError ? "text-red-500" : ""
+                                    }`}
                             />
-                            {result && !isError && (
-                                <Button variant="outline" onClick={handleCopy} className="w-full gap-2">
-                                    {copied ? <Check size={16} /> : <Copy size={16} />}
-                                    {copied ? "Copied!" : "Copy to Clipboard"}
-                                </Button>
-                            )}
                         </CardContent>
                     </Card>
                 </div>
@@ -177,8 +205,8 @@ export default function CryptoTool() {
     );
 }
 
-function ControlPanelContent({ onAction, keyState, mode }: any) {
-    const [key, setKey] = keyState;
+// CHANGE: Renamed props for clarity (keyState -> keyVal, onKeyChange).
+function ControlPanelContent({ onAction, keyVal, onKeyChange, mode }: { onAction: () => void; keyVal: string; onKeyChange: (value: string) => void; mode: 'encrypt' | 'decrypt' }) {
     const isEncrypt = mode === 'encrypt';
 
     return (
@@ -189,8 +217,8 @@ function ControlPanelContent({ onAction, keyState, mode }: any) {
                     <Input
                         id="aes-key"
                         placeholder="Enter AES Base64 Key"
-                        value={key}
-                        onChange={(e) => setKey(e.target.value)}
+                        value={keyVal}
+                        onChange={(e) => onKeyChange(e.target.value)}
                     />
                 </div>
                 <Button onClick={onAction} className="w-full gap-2 sm:w-auto">
