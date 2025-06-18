@@ -54,7 +54,6 @@ export default function CryptoTool() {
         try {
             if (mode === "encrypt") {
                 const encrypted = encryptResponse(inputText, key);
-                // CHANGE: Simplified the output structure for encryption
                 const responsePayload = { RequestData: encrypted };
                 setResult(JSON.stringify(responsePayload, null, 2));
             } else {
@@ -141,14 +140,12 @@ export default function CryptoTool() {
                     </TabsList>
                 </Tabs>
 
-                {/* CHANGE: Simplified props for ControlPanelContent for better readability */}
                 <ControlPanelContent onAction={handleAction} keyVal={key} onKeyChange={setKey} mode={mode} />
 
                 <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                     <Card>
                         <CardHeader>
                             <CardTitle>Input</CardTitle>
-                            {/* CHANGE: Using the new dynamic description function */}
                             <CardDescription>
                                 {generateInputDescription()}
                             </CardDescription>
@@ -161,16 +158,15 @@ export default function CryptoTool() {
                                         ? 'Your secret message or {"data": "value"}'
                                         : '{\n  "ResponseData": "PzuBqQ1h/v/b8enC..."\n}'
                                 }
-                                // CHANGE: The value is now directly tied to the state. This is crucial.
                                 value={inputText}
                                 onChange={(e) => setInputText(e.target.value)}
-                                className="min-h-[250px] font-mono"
+                                // CHANGE: Added a fixed height (h-[350px]) to ensure a scrollbar appears when content overflows.
+                                className="min-h-[250px] h-[350px] font-mono"
                             />
                         </CardContent>
                     </Card>
 
                     <Card>
-                        {/* CHANGE: The CardHeader is now a flex container to position the copy button correctly. */}
                         <CardHeader>
                             <div className="flex items-center justify-between">
                                 <div className="space-y-1">
@@ -194,7 +190,8 @@ export default function CryptoTool() {
                                 placeholder="The result will appear here..."
                                 value={result}
                                 readOnly
-                                className={`min-h-[250px] font-mono ${isError ? "text-red-500" : ""
+                                // CHANGE: Added a fixed height (h-[350px]) to ensure a scrollbar appears when content overflows.
+                                className={`min-h-[250px] h-[350px] font-mono ${isError ? "text-red-500" : ""
                                     }`}
                             />
                         </CardContent>
@@ -205,7 +202,6 @@ export default function CryptoTool() {
     );
 }
 
-// CHANGE: Renamed props for clarity (keyState -> keyVal, onKeyChange).
 function ControlPanelContent({ onAction, keyVal, onKeyChange, mode }: { onAction: () => void; keyVal: string; onKeyChange: (value: string) => void; mode: 'encrypt' | 'decrypt' }) {
     const isEncrypt = mode === 'encrypt';
 
