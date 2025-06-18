@@ -13,10 +13,9 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList,TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { encryptResponse, decryptRequest } from "@/lib/crypto";
-import { jsonToString, payload } from "@/lib/format";
 
 // Mock functions for demonstration
 // const encryptResponse = (text: string, key: string) => `{"ResponseData":"${btoa(text)}:${btoa(key)}"}`;
@@ -25,8 +24,6 @@ import { jsonToString, payload } from "@/lib/format";
 //     if (atob(k) !== key) throw new Error("Invalid key");
 //     return `{"message": "Decrypted successfully!", "original_payload": "${atob(data)}", "length": ${atob(data).length}, "processed": true, "extra": null}`;
 // };
-// type payload = { ResponseData: string; };
-// const jsonToString = (json: payload): string => json.ResponseData;
 
 
 export default function CryptoTool() {
@@ -49,42 +46,43 @@ export default function CryptoTool() {
 
         try {
             if (mode === "encrypt") {
-                // Encrypt the raw input
+                // Encryption produces a standard ResponseData payload
                 const encrypted = encryptResponse(inputText, key);
-                // Wrap the result in the standard JSON response format
                 const responsePayload = { ResponseData: encrypted };
                 setResult(JSON.stringify(responsePayload, null, 2));
             } else {
-                // Decrypt the payload from the input JSON
+                // Decryption can handle either ResponseData or RequestData
                 let encryptedPayload: string;
                 try {
-                    const parsedInput: payload = JSON.parse(inputText);
-                    encryptedPayload = jsonToString(parsedInput);
-                    if (typeof encryptedPayload !== 'string' || encryptedPayload.trim() === '') {
-                        throw new Error("'ResponseData' must be a non-empty string.");
+                    const parsedInput = JSON.parse(inputText);
+                    
+                    // --- MODIFICATION: Check for either key ---
+                    const data = parsedInput.ResponseData || parsedInput.RequestData;
+
+                    if (typeof data === 'string' && data.trim() !== '') {
+                        encryptedPayload = data;
+                    } else {
+                        throw new Error("Input JSON must contain a non-empty string value for 'ResponseData' or 'RequestData'.");
                     }
                 } catch (e: any) {
-                    setResult(`❌ Error: Invalid input format. Must be JSON with 'ResponseData' key. Details: ${e.message}`);
+                    setResult(`❌ Error: Invalid input format. ${e.message}`);
                     setIsError(true);
                     return;
                 }
 
-                // Decrypt the extracted payload
                 const decrypted = decryptRequest(encryptedPayload, key);
 
                 // Attempt to pretty-print the final decrypted result if it's JSON
                 try {
                     const jsonObject = JSON.parse(decrypted);
-                    const formattedJson = JSON.stringify(jsonObject, null, 2);
-                    setResult(formattedJson);
+                    setResult(JSON.stringify(jsonObject, null, 2));
                 } catch (jsonError) {
-                    // If not JSON, show the raw decrypted string
-                    setResult(decrypted);
+                    setResult(decrypted); // Show as plain text if not JSON
                 }
             }
         } catch (err: any) {
             console.error(err);
-            setResult(`❌ Error: Decryption failed. Check key or encrypted data. Details: ${err.message}`);
+            setResult(`❌ Error: Operation failed. Check key or encrypted data. Details: ${err.message}`);
             setIsError(true);
         }
     };
@@ -129,12 +127,12 @@ export default function CryptoTool() {
                             <CardDescription>
                                 {mode === "encrypt"
                                     ? "Enter the raw text or JSON you want to encrypt."
-                                    : "Paste the JSON object containing the 'ResponseData' here."}
+                                    : "Paste the JSON object containing 'ResponseData' or 'RequestData'."}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Textarea
-                            spellCheck="false"
+                                spellCheck="false"
                                 placeholder={
                                     mode === "encrypt"
                                         ? 'Your secret message or {"data": "value"}'
