@@ -205,7 +205,7 @@ export default function CryptoTool() {
                                 }
                                 value={inputText}
                                 onChange={(e) => setInputText(e.target.value)}
-                                className="h-full min-h-[200px] w-full flex-1 resize-none overflow-auto font-mono"
+                                className="h-full text-blue-600 dark:text-blue-400 min-h-[200px] w-full flex-1 resize-none overflow-auto font-mono "
                             />
                         </div>
                     </CardContent>
@@ -230,7 +230,7 @@ export default function CryptoTool() {
                     </CardHeader>
                     <CardContent className="flex-1 overflow-hidden p-4">
                         {result && isResultJson() && !isError ? (
-                            <div className="h-full min-h-[200px] w-full flex-1 overflow-auto rounded-md border bg-background p-3">
+                            <div className="h-full min-h-[200px] w-full flex-1 overflow-auto rounded-md border p-3">
                                 <JsonHighlighter json={result} className="h-full" />
                             </div>
                         ) : (
