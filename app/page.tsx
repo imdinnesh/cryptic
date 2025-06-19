@@ -13,7 +13,7 @@ export default function Home() {
         <link rel="canonical" href="https://crypto.starbyte.tech/" />
         <meta name="robots" content="index, follow" />
       </Head>
-      <Form />
+      <Form/>
     </main>
   );
 }

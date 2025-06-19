@@ -17,6 +17,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { encryptResponse, decryptRequest } from "@/lib/crypto";
 import { toast } from "sonner";
+import { ThemeToggle } from "./theme-toogle";
 
 export default function CryptoTool() {
     const [inputText, setInputText] = useState("");
@@ -109,12 +110,17 @@ export default function CryptoTool() {
     return (
         <div className="flex h-screen w-full flex-col bg-background p-4 sm:p-6 overflow-hidden">
             <header className="mb-4 shrink-0">
-                <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                    AES Encryption & Decryption Tool
-                </h1>
-                <p className="text-muted-foreground">
-                    Securely encrypt or decrypt data using an AES key.
-                </p>
+                <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+                            AES Encryption & Decryption Tool
+                        </h1>
+                        <p className="text-muted-foreground">
+                            Securely encrypt or decrypt data using an AES key.
+                        </p>
+                    </div>
+                    <ThemeToggle />
+                </div>
             </header>
 
             <Card className="mb-4 shrink-0">
